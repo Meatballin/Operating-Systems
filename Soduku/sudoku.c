@@ -5,12 +5,50 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
+#include <pthread.h>
 
 struct arrayHandler{
     int arr [9][9];
 } array;
 
+//Function Prototypes
+//====================================================================================
+void print2DArray(struct arrayHandler array, const int ROW_SIZE);
+void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT);
+void *doThreadRowTesting(void *ptr);
+void *doThreadColTesting(void *ptr);
+
+//====================================================================================
+
 int main()
+{
+    pthread_t threadRowTesting[9];
+    pthread_t threadColTesting;
+    int threadIncArray[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+
+    const int ROW_SIZE = 9;
+    const int COL_HEIGHT = 9;
+
+    tokenize2DArray(ROW_SIZE, COL_HEIGHT);
+    //print2DArray(array, ROW_SIZE);
+    //initBoolArray(testingHandler);
+
+
+    for(int i = 0; i < ROW_SIZE; i++)
+    {
+        pthread_create(&threadRowTesting[i], NULL, doThreadRowTesting, &threadIncArray[i]);
+    }
+    for(int i = 0; i < ROW_SIZE; i++)
+    {
+        pthread_join(threadRowTesting[i], NULL);;
+    }
+    
+    return 0;
+}
+
+//Function to store all input stream values in our 2D array
+void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT)
 {
     //var declarations
     //====================================================================================
@@ -25,9 +63,6 @@ int main()
     //used for conversion of character --> int
     int charToInt;
 
-    //vars for validity checking
-    const int ROW_SIZE = 9;
-    const int COL_HEIGHT = 9;
     int checkForRowSize = 0;
 
     //used for storage of converted ints into 2d struct array
@@ -44,7 +79,7 @@ int main()
         {
             newLineCounter++;
         }
-        
+
         //Execute this IF statement if we read a valid character from stdin through
         //redirection operator
         if(!isspace(charFromInput) && charFromInput != '\n')
@@ -96,7 +131,11 @@ int main()
         printf("not a valid 9x9 matrix");
         exit(1);
     }
+}
 
+//function to print our 2D array for testing
+void print2DArray(struct arrayHandler array, const int ROW_SIZE)
+{
     //test print of 2d array from struct
     for(int i = 0; i < ROW_SIZE; i++)
     {
@@ -104,7 +143,43 @@ int main()
             printf("\n");
         for(int j = 0; j < ROW_SIZE; j++)
             printf("%d", array.arr[i][j]);
-    }    
-    printf("\n");
-    return 0;
+    }  
+}
+
+//Function for row checking thread
+void *doThreadRowTesting(void *ptr)
+{
+    //vars
+    int row = *(int*)ptr;
+    bool boolArray[9];
+    int rowArray[9];
+    int temp;
+    int checkVar;
+
+    //bool arr that is allocated on stack gets fully set to false.
+    for(int b = 0; b < 9; b++)
+    {
+        boolArray[b] = false;
+    }
+
+    //initialize our function stack array to our first row of 2D array in struct
+    for(int i = 0; i < 9; i++)
+    {
+        rowArray[i] = array.arr[row][i];
+    }
+
+    for(int j = 0; j < 9; j++)
+    {
+        checkVar = rowArray[j];
+        if(!boolArray[checkVar - 1])
+            boolArray[checkVar - 1] = true;
+        else
+            printf("You have an invalid input on row %d", row);
+    }
+    
+}
+
+void *doThreadColTesting(void *ptr)
+{
+
 }
