@@ -24,7 +24,7 @@ void *doThreadColTesting(void *ptr);
 int main()
 {
     pthread_t threadRowTesting[9];
-    pthread_t threadColTesting;
+    pthread_t threadColTesting[9];
     int threadIncArray[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
     const int ROW_SIZE = 9;
@@ -34,16 +34,18 @@ int main()
     //print2DArray(array, ROW_SIZE);
     //initBoolArray(testingHandler);
 
-
+    printf("\n-------------------------\n");
     for(int i = 0; i < ROW_SIZE; i++)
     {
         pthread_create(&threadRowTesting[i], NULL, doThreadRowTesting, &threadIncArray[i]);
+        pthread_create(&threadColTesting[i], NULL, doThreadColTesting, &threadIncArray[i]);
     }
     for(int i = 0; i < ROW_SIZE; i++)
     {
         pthread_join(threadRowTesting[i], NULL);;
+        pthread_join(threadColTesting[i], NULL);;
     }
-    
+    printf("\n-------------------------\n");
     return 0;
 }
 
@@ -128,7 +130,7 @@ void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT)
     //check if we even have a valud 9x9 matrix
     if(row != COL_HEIGHT)
     {
-        printf("not a valid 9x9 matrix");
+        printf("not a valid 9x9 matrix\n");
         exit(1);
     }
 }
@@ -174,12 +176,38 @@ void *doThreadRowTesting(void *ptr)
         if(!boolArray[checkVar - 1])
             boolArray[checkVar - 1] = true;
         else
-            printf("You have an invalid input on row %d", row);
+            printf("\nYou have an invalid input on row: %d", row + 1);
     }
     
 }
 
 void *doThreadColTesting(void *ptr)
 {
+    //vars
+    int col = *(int*)ptr;
+    bool boolArray[9];
+    int colArray[9];
+    int temp;
+    int checkVar;
 
+    //bool arr that is allocated on stack gets fully set to false.
+    for(int b = 0; b < 9; b++)
+    {
+        boolArray[b] = false;
+    }
+
+    //initialize our function stack array to our first row of 2D array in struct
+    for(int i = 0; i < 9; i++)
+    {
+        colArray[i] = array.arr[i][col];
+    }
+
+    for(int j = 0; j < 9; j++)
+    {
+        checkVar = colArray[j];
+        if(!boolArray[checkVar - 1])
+            boolArray[checkVar - 1] = true;
+        else
+            printf("\nYou have an invalid input on column: %d", col + 1);
+    }
 }
