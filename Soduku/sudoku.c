@@ -12,38 +12,50 @@ struct arrayHandler{
     int arr [9][9];
 } array;
 
+struct subgrids{
+    int threeByThree[9][9];
+}subgrid;
+
+
 //Function Prototypes
 //====================================================================================
 void print2DArray(struct arrayHandler array, const int ROW_SIZE);
 void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT);
 void *doThreadRowTesting(void *ptr);
 void *doThreadColTesting(void *ptr);
-
+void *do3x3ThreadTesting(void *ptr);
+void setBoolArrayToFalse(bool *array);
+void initSubgrids();
 //====================================================================================
 
 int main()
 {
     pthread_t threadRowTesting[9];
     pthread_t threadColTesting[9];
+    pthread_t threadSubgridTesting[9];
     int threadIncArray[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-
+    
     const int ROW_SIZE = 9;
     const int COL_HEIGHT = 9;
 
+    
+
     tokenize2DArray(ROW_SIZE, COL_HEIGHT);
-    //print2DArray(array, ROW_SIZE);
-    //initBoolArray(testingHandler);
+    initSubgrids();
 
     printf("\n-------------------------\n");
     for(int i = 0; i < ROW_SIZE; i++)
     {
         pthread_create(&threadRowTesting[i], NULL, doThreadRowTesting, &threadIncArray[i]);
         pthread_create(&threadColTesting[i], NULL, doThreadColTesting, &threadIncArray[i]);
+        pthread_create(&threadSubgridTesting[i], NULL, do3x3ThreadTesting, &threadIncArray[i]);
+        
     }
     for(int i = 0; i < ROW_SIZE; i++)
     {
-        pthread_join(threadRowTesting[i], NULL);;
-        pthread_join(threadColTesting[i], NULL);;
+        pthread_join(threadRowTesting[i], NULL);
+        pthread_join(threadColTesting[i], NULL);
+        pthread_join(threadSubgridTesting[i], NULL);
     }
     printf("\n-------------------------\n");
     return 0;
@@ -115,7 +127,7 @@ void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT)
                 exit(1);
             }
 
-            
+            //This loop handles multiple new lines in a row
             while(charFromInput == '\n')
                 charFromInput = getc(stdin);
 
@@ -141,7 +153,7 @@ void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT)
     //check if we even have a valud 9x9 matrix
     if(row != COL_HEIGHT - 1)
     {
-        printf("not a valid 9x9 matrix");
+        printf("not a valid 9x9 matrix\n");
         exit(1);
     }
 }
@@ -171,10 +183,7 @@ void *doThreadRowTesting(void *ptr)
     int checkVar;
 
     //bool arr that is allocated on stack gets fully set to false.
-    for(int b = 0; b < 9; b++)
-    {
-        boolArray[b] = false;
-    }
+    setBoolArrayToFalse(boolArray);
 
     //initialize our function stack array to our first row of 2D array in struct
     for(int i = 0; i < 9; i++)
@@ -188,7 +197,7 @@ void *doThreadRowTesting(void *ptr)
         if(!boolArray[checkVar - 1])
             boolArray[checkVar - 1] = true;
         else
-            printf("\nYou have an invalid input on row: %d", row + 1);
+            printf("You have an invalid input on row: %d\n", row + 1);
     }
     
 }
@@ -203,10 +212,7 @@ void *doThreadColTesting(void *ptr)
     int checkVar;
 
     //bool arr that is allocated on stack gets fully set to false.
-    for(int b = 0; b < 9; b++)
-    {
-        boolArray[b] = false;
-    }
+    setBoolArrayToFalse(boolArray);
 
     //initialize our function stack array to our first row of 2D array in struct
     for(int i = 0; i < 9; i++)
@@ -220,6 +226,122 @@ void *doThreadColTesting(void *ptr)
         if(!boolArray[checkVar - 1])
             boolArray[checkVar - 1] = true;
         else
-            printf("\nYou have an invalid input on column: %d", col + 1);
+            printf("You have an invalid input on column: %d\n", col + 1);
     }
+}
+
+void *do3x3ThreadTesting(void *ptr)
+{
+    //currentSection used in terms of output 
+    int row = *(int*)ptr;
+    bool boolArray[9];
+    int checkVar;
+
+    setBoolArrayToFalse(boolArray);
+    for(int j = 0; j < 9; j++)
+    {
+        
+        checkVar = subgrid.threeByThree[row][j];
+        if(!boolArray[checkVar - 1])
+            boolArray[checkVar - 1] = true;
+        else
+            switch(row){
+                case 0:
+                    printf("The Top Left subgrid doesn't have the required values.\n");
+                    break;
+                case 1:
+                    printf("The Top Middle subgrid doesn't have the required values.\n");
+                    break;
+                case 2:
+                    printf("The Top Right subgrid doesn't have the required values.\n");
+                    break;
+                case 3:
+                    printf("The Middle Left subgrid doesn't have the required values.\n");
+                    break;
+                case 4:
+                    printf("The Middle subgrid doesn't have the required values.\n");
+                    break;
+                case 5:
+                    printf("The Middle Right subgrid doesn't have the required values.\n");
+                    break;
+                case 6:
+                    printf("The Bottom Left subgrid doesn't have the required values.\n");
+                    break;
+                case 7:
+                    printf("The Bottom Middle subgrid doesn't have the required values.\n");
+                    break;
+                case 8:
+                    printf("The Bottom Right subgrid doesn't have the required values.\n");
+                    break;
+            }
+
+    }
+
+}
+
+void setBoolArrayToFalse(bool *array)
+{
+    for(int i = 0; i < 9; i++)
+        array[i] = false;
+}
+
+void initSubgrids()
+{
+    int row = 0;
+    int col = 0;
+
+    //Loop to populate our new 3x3 subgrid 2D array with entire left side of 
+    //tokenized 2D array. This loop covers TL, ML, BL
+    for(int f = 0; f < 9; f += 3)
+    {
+        row = f;
+        for(int i = f; i < (f + 3); i++)
+        {
+            for(int j = 0; j < 3; j++)
+            {
+                subgrid.threeByThree[row][col] = array.arr[i][j];
+                col++;
+            }
+        }
+        col = 0;
+        
+    }
+    col = 0;
+    row = 1;
+    //Loop to populate new 2D array with TM, M, BM
+    for(int f = 0; f < 9; f += 3)
+    {
+        
+        for(int i = f; i < (f + 3); i++)
+        {
+            for(int j = 3; j < 6; j++)
+            {
+                subgrid.threeByThree[row][col] = array.arr[i][j];
+                col++;
+            }
+        }
+        row += 3;
+        col = 0;
+    }
+
+    col = 0;
+    row = 2;
+
+    //Loop to populate new 2D array with TR, ML, BR
+    for(int f = 0; f < 9; f += 3)
+    {
+        
+        for(int i = f; i < (f + 3); i++)
+        {
+            for(int j = 6; j < 9; j++)
+            {
+                subgrid.threeByThree[row][col] = array.arr[i][j];
+                col++;
+            }
+        }
+        row += 3;
+        col = 0;
+    }
+
+
 }
