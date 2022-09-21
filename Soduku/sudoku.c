@@ -7,6 +7,11 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <getopt.h>
+
+/* These are the only two global variables allowed in your program */
+static int verbose = 0;
+static int use_fork = 0;
 
 struct arrayHandler{
     int arr [9][9];
@@ -26,9 +31,10 @@ void *doThreadColTesting(void *ptr);
 void *do3x3ThreadTesting(void *ptr);
 void setBoolArrayToFalse(bool *array);
 void initSubgrids();
+void parse_args(int argc, char *argv[]);
 //====================================================================================
 
-int main()
+int main(int argc, char *argv[])
 {
     pthread_t threadRowTesting[9];
     pthread_t threadColTesting[9];
@@ -38,26 +44,74 @@ int main()
     const int ROW_SIZE = 9;
     const int COL_HEIGHT = 9;
 
-    
+    pid_t p;
+    int temp = 0;
 
+    
     tokenize2DArray(ROW_SIZE, COL_HEIGHT);
     initSubgrids();
-
-    printf("\n-------------------------\n");
-    for(int i = 0; i < ROW_SIZE; i++)
+    
+    parse_args(argc, argv);
+    
+    //BEGIN OF FORK()
+    if (use_fork) 
     {
-        pthread_create(&threadRowTesting[i], NULL, doThreadRowTesting, &threadIncArray[i]);
-        pthread_create(&threadColTesting[i], NULL, doThreadColTesting, &threadIncArray[i]);
-        pthread_create(&threadSubgridTesting[i], NULL, do3x3ThreadTesting, &threadIncArray[i]);
+        printf("We are forking child processes as workers.\n");
+        printf("\n-------------------------\n");
+    
+        for(int i = 0; i < 27; i++)
+        {
+            p = fork();
+            if(p == 0)
+            {
+                if(i >= 0 && i <= 8)
+                {
+                    doThreadRowTesting(&threadIncArray[i]);
+                    exit(1);
+                }
+                else if (i >= 9 && i <= 17)
+                {
+                    temp = i % 9;
+                    doThreadColTesting(&threadIncArray[temp]);
+                    exit(1);
+                }
+                else
+                {
+                    temp = i % 18;
+                    do3x3ThreadTesting(&threadIncArray[temp]);
+                    exit(1);
+                }
+            
+            }
         
-    }
-    for(int i = 0; i < ROW_SIZE; i++)
+        }
+        printf("\n-------------------------\n");
+
+    
+    } 
+    //BEGIN OF THREADS
+    else if (verbose) 
     {
-        pthread_join(threadRowTesting[i], NULL);
-        pthread_join(threadColTesting[i], NULL);
-        pthread_join(threadSubgridTesting[i], NULL);
+        printf("We are using worker threads.\n");
+        
+    
+        printf("\n-------------------------\n");
+        for(int i = 0; i < ROW_SIZE; i++)
+        {
+            pthread_create(&threadRowTesting[i], NULL, doThreadRowTesting, &threadIncArray[i]);
+            pthread_create(&threadColTesting[i], NULL, doThreadColTesting, &threadIncArray[i]);
+            pthread_create(&threadSubgridTesting[i], NULL, do3x3ThreadTesting, &threadIncArray[i]);
+            
+        }
+        for(int i = 0; i < ROW_SIZE; i++)
+        {
+            pthread_join(threadRowTesting[i], NULL);
+            pthread_join(threadColTesting[i], NULL);
+            pthread_join(threadSubgridTesting[i], NULL);
+        }
+        printf("\n-------------------------\n");
     }
-    printf("\n-------------------------\n");
+    
     return 0;
 }
 
@@ -179,7 +233,6 @@ void *doThreadRowTesting(void *ptr)
     int row = *(int*)ptr;
     bool boolArray[9];
     int rowArray[9];
-    int temp;
     int checkVar;
 
     //bool arr that is allocated on stack gets fully set to false.
@@ -345,3 +398,34 @@ void initSubgrids()
 
 
 }
+
+//Takes care of command line arguments
+void parse_args(int argc, char *argv[])
+{
+    int c;
+    while (1)
+    {
+        static struct option long_options[] =
+        {
+            {"verbose", no_argument,       0, 'v'},
+            {"fork",    no_argument,       0, 'f'},
+            {0, 0, 0, 0}
+        };
+        int option_index = 0;
+        c = getopt_long (argc, argv, "vf", long_options, &option_index);
+        if (c == -1) break;
+
+        switch (c)
+        {
+            case 'f':
+                use_fork = 1;
+                break;
+            case 'v':
+                verbose = 1;
+                break;
+            default:
+                exit(1);
+        }
+    }
+}
+
