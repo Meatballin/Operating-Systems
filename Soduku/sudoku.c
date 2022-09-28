@@ -9,22 +9,39 @@
 #include <pthread.h>
 #include <getopt.h>
 
-/* These are the only two global variables allowed in your program */
+/** These are the only two global variables allowed in your program **/
 static int verbose = 0;
 static int use_fork = 0;
 
+/**
+arrayHandler: initializes a 2D array to store our Sudoku
+@return: an array of size 9x9
+**/
 struct arrayHandler{
     int arr [9][9];
 } array;
 
+/**
+subgrids: initializes a 2D array to store our 3x3 subgrids
+@return: an array of size 9x9
+**/
 struct subgrids{
     int threeByThree[9][9];
 }subgrid;
 
 
-//Function Prototypes
-//====================================================================================
+/***************** Function Prototypes: *****************/
+
+/**
+ void print2DArray: prints our Sudoku stored in a 2D array
+ @param: a struct arrayHandler which stores our 2D array, and the row size declared in main
+ @return: prints the sudoku table
+ **/
 void print2DArray(struct arrayHandler array, const int ROW_SIZE);
+
+/**
+ void tokenize2DArray:
+ **/
 void tokenize2DArray(const int ROW_SIZE, const int COL_HEIGHT);
 void *doThreadRowTesting(void *ptr);
 void *doThreadColTesting(void *ptr);
@@ -32,7 +49,7 @@ void *do3x3ThreadTesting(void *ptr);
 void setBoolArrayToFalse(bool *array);
 void initSubgrids();
 void parse_args(int argc, char *argv[]);
-//====================================================================================
+/********************************************************/
 
 int main(int argc, char *argv[])
 {
